@@ -3,6 +3,9 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+        body.linux {
+            background-color: #0099cc;
+        }
         .lds-roller {
             display: inline-block;
             position: relative;
@@ -87,7 +90,6 @@
                 transform: rotate(360deg);
             }
         }
-
     </style>
 </head>
 <body>
@@ -97,6 +99,12 @@
     <br>
     <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
 </center>
+
+<script>
+if (/\blinux\b/i.test(navigator.userAgent)) {
+    document.body.className += " linux";
+}
+</script>
 
 </body>
 </html>

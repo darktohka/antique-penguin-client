@@ -7,38 +7,47 @@ const rpc = new RPC.Client({ transport: 'ipc' });
 const state = require('./lib/enums/states.json');
 
 let flash_plugin = null;
+let icon = 'icon.png';
+
 switch (process.platform) {
     case 'win32':
-        flash_plugin = `lib/flash/pepflashplayer64_32_0_0_303.dll`
+        flash_plugin = `lib/flash/win/pepflashplayer64_32_0_0_303.dll`;
+        icon = 'icon.ico';
         break;
     case 'darwin':
-        flash_plugin = `lib/flash/PepperFlashPlayer.plugin`
+        flash_plugin = `lib/flash/mac/PepperFlashPlayer.plugin`;
+        icon = 'icon.icns';
         break;
     case 'linux':
-        flash_plugin = `lib/flash/libpepflashplayer.so`
+        flash_plugin = `lib/flash/linux/libpepflashplayer.so`;
+        icon = 'icon.png';
         break;
 }
+
+icon = `${__dirname}/lib/img/${icon}`;
+
 app.commandLine.appendSwitch('ppapi-flash-path', path.join(__dirname, flash_plugin));
 const TIMESTAMP = new Date();
 
 function createWindow() {
     let splash = new BrowserWindow(
-        {width: 512,
+        {
+            width: 512,
             height: 512,
-            icon: `${__dirname}/lib/img/icon.ico`,
             transparent: true,
             frame: false,
-            alwaysOnTop: true
+            alwaysOnTop: true,
+            icon
         });
     splash.loadFile(`${__dirname}/lib/splash.html`).then(() => console.log('loaded splash.'));
     const win = new BrowserWindow({
         width: 1120,
         height: 720,
-        icon: `${__dirname}/lib/img/icon.ico`,
         webPreferences: {
             plugins: true,
         },
-        show: false
+        show: false,
+        icon
     })
 
     win.setMenu(null);

@@ -1,4 +1,15 @@
-# Project exclude paths
+# NodeJS
 /node_modules/
+
+# Electron
+dist/
+
+# IntelliJ IDEA
 .idea/
+
+# NPM
 package-lock.json
+
+# Yarn
+yarn-error.log
+yarn.lock

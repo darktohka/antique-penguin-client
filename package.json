@@ -1,19 +1,42 @@
 {
   "name": "antique",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "antique penguin desktop client",
   "main": "main.js",
-  "directories": {
-    "lib": "lib"
-  },
   "devDependencies": {
-    "electron": ">=9.4.0",
-    "electron-packager": "^15.2.0"
+    "electron": ">= 11.5.0 < 12.0.0",
+    "electron-builder": "> 5.0.0"
+  },
+  "build": {
+    "productName": "Antique Penguin",
+    "asar": false,
+    "afterPack": "./afterpack.js",
+    "afterAllArtifactBuild": "./afterbuild.js",
+    "appId": "in.antiquepengu.client",
+    "files": ["lib/img/antique_logo.png", "lib/splash.html", "lib/enums/**/*", "lib/flash/${os}/**/*", "main.js"],
+    "directories": {
+      "buildResources": "lib"
+    },
+    "win": {
+      "icon": "lib/img/icon.ico",
+      "files": ["lib/img/icon.ico"]
+    },
+    "mac": {
+      "icon": "lib/img/icon.icns",
+      "files": ["lib/img/icon.icns"]
+    },
+    "linux": {
+      "icon": "lib/img/icon.png",
+      "description": "Antique Penguin is a moderated virtual remake of Club Penguin.",
+      "category": "Game",
+      "files": ["lib/img/icon.png"]
+    }
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "build": "electron-packager . antique-penguin --platform=all --icon=./lib/img/icon.icns"
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
   },
   "repository": {
     "type": "git",
