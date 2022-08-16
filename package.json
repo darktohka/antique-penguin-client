@@ -29,7 +29,9 @@
       "icon": "lib/img/icon.png",
       "description": "Antique Penguin is a moderated virtual remake of Club Penguin.",
       "category": "Game",
-      "files": ["lib/img/icon.png"]
+      "files": ["lib/img/icon.png"],
+      "target": "AppImage",
+      "artifactName": "antique.${ext}"
     }
   },
   "scripts": {
