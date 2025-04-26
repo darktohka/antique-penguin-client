@@ -31,7 +31,8 @@
       "category": "Game",
       "files": ["lib/img/icon.png"],
       "target": ["deb", "AppImage"],
-      "artifactName": "antique.${ext}"
+      "artifactName": "antique.${ext}",
+      "maintainer": ["Kokomo123", "Darktohka"]
     }
   },
   "scripts": {
