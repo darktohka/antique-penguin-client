@@ -26,6 +26,8 @@ jobs:
 
       - name: Package with electron-builder
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # Set build target based on OS
         # Using a shell trick to set the build target dynamically
         # windows-latest → win, ubuntu-latest → linux, macos-latest → mac
