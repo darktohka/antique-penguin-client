@@ -49,5 +49,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: electron-app-${{ matrix.os }}
+          name: antique-penguin-launcher-${{ matrix.os }}
           path: dist/
