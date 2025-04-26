@@ -32,7 +32,7 @@
       "files": ["lib/img/icon.png"],
       "target": ["deb", "AppImage"],
       "artifactName": "antique.${ext}",
-      "maintainer": ["Kokomo123", "Darktohka"]
+      "maintainer": "Darktohka"
     }
   },
   "scripts": {
