@@ -5,7 +5,7 @@ on:
     branches: 
       - master
 
-workflow_trigger: 
+workflow_dispatch: 
 jobs:
   build-launcher:
     runs-on: ${{ matrix.os }}
