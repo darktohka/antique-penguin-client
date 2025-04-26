@@ -2,10 +2,8 @@ name: Build Electron App
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+    branches: 
+      - main
 jobs:
   build-launcher:
     runs-on: ${{ matrix.os }}
@@ -26,7 +24,7 @@ jobs:
          large-packages: true
          swap-storage: true
          docker-images: false
-         
+
       - name: Checkout code
         uses: actions/checkout@v4
 
