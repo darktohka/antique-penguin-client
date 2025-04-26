@@ -1,4 +1,4 @@
-name: Build Electron App
+name: Build Antique Penguin Launcher
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
 
     steps:
       - name: Checkout code
