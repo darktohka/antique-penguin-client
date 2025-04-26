@@ -16,7 +16,6 @@ jobs:
          # `System.IO.IOException: No space left on device : '/home/runner/runners/2.319.1/_diag/Worker_20240826-130726-utc.log'`
          # See also: https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
       - name: Free Disk Space (Ubuntu)
-        runs-on: [ubuntu-latest, macos-latest]
         uses: insightsengineering/disk-space-reclaimer@v1
         with:
          android: true
