@@ -42,17 +42,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/akbenjii/antique-penguin-client.git"
+    "url": "git+https://github.com/darktohka/antique-penguin-client.git"
   },
   "keywords": [
     "cpps"
   ],
-  "author": "benji",
+  "author": "Darktohka",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/akbenjii/antique-penguin-client/issues"
+    "url": "https://github.com/darktohka/antique-penguin-client/issues"
   },
-  "homepage": "https://github.com/akbenjii/antique-penguin-client#readme",
+  "homepage": "https://github.com/darktohka/antique-penguin-client#readme",
   "dependencies": {
     "discord-rpc": "^3.2.0"
   }
