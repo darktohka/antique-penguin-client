@@ -1,0 +1,8 @@
+name: Build & Upload Launcher Binaries
+
+on:
+   push:
+       branches: 
+          - main
+
+
