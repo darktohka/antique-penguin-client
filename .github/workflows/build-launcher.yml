@@ -1,8 +1,73 @@
-name: Build & Upload Launcher Binaries
+name: Build Electron App
 
 on:
-   push:
-       branches: 
-          - main
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
+jobs:
+  build-launcher:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
+    steps:
+       # Avoid the following error when building multiple large images:
+         # `System.IO.IOException: No space left on device : '/home/runner/runners/2.319.1/_diag/Worker_20240826-130726-utc.log'`
+         # See also: https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+      - name: Free Disk Space (Ubuntu)
+        uses: insightsengineering/disk-space-reclaimer@v1
+        with:
+         android: true
+         dotnet: true
+         haskell: true
+         large-packages: true
+         swap-storage: true
+         docker-images: false
+         
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the app
+        run: npm run build
+
+      - name: Package with electron-builder
+        run: |
+          npx electron-builder --$BUILD_TARGET
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        # Set build target based on OS
+        # Using a shell trick to set the build target dynamically
+        # windows-latest → win, ubuntu-latest → linux, macos-latest → mac
+        #
+        # The actual `--win`, `--linux`, `--mac` is appended to the command above
+        #
+        # The variable is set by determining OS at runtime
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            BUILD_TARGET="win"
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            BUILD_TARGET="linux"
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            BUILD_TARGET="mac"
+          fi
+          echo "Packaging for $BUILD_TARGET..."
+          npx electron-builder --$BUILD_TARGET
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: electron-app-${{ matrix.os }}
+          path: dist/
