@@ -22,7 +22,7 @@
       "files": ["lib/img/icon.ico"]
     },
     "mac": {
-      "target": "dmg"
+      "target": ["dmg"],
       "icon": "lib/img/icon.icns",
       "files": ["lib/img/icon.icns"]
     },
