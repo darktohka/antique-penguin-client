@@ -1,6 +1,6 @@
 {
   "name": "antique",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "antique penguin desktop client",
   "main": "main.js",
   "devDependencies": {
