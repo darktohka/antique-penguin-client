@@ -5,10 +5,11 @@ const Pusher = require('pusher');
 const path = require("path");
 const fs = require('fs');
 const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
+const { Tray } = require('electron');
 
-const PUSHER_APP_ID = '2121229';
-const PUSHER_KEY = '7169db8eacae243fa133';
-const PUSHER_SECRET = '0e5d1b554cc5c7f63b0a';
+const PUSHER_APP_ID = '2121230';
+const PUSHER_KEY = 'd27b695810d68ff55415';
+const PUSHER_SECRET = '0e27e4c2a0a380024c8a';
 const PUSHER_CLUSTER = 'mt1';
 const PUSHER_CHANNEL = 'notifications';
 const PUSHER_EVENT = 'notification';
@@ -21,6 +22,7 @@ const state = require('./lib/enums/states.json');
 
 const initialSettings = getSettings();
 let discordRPCEnabled = initialSettings.discordRPCEnabled;
+let tray = null;
 
 const menu_template = [  
   // { role: 'langMenu' }
@@ -109,6 +111,41 @@ const menu_template = [
                 }
             }
         },
+        {
+            label: 'Close Behavior',
+            submenu: [
+                {
+                    label: 'Ask Every Time',
+                    type: 'radio',
+                    checked: getSettings().closeBehavior === 'ask',
+                    click: () => {
+                        const s = getSettings();
+                        s.closeBehavior = 'ask';
+                        saveSettings(s);
+                    }
+                },
+                {
+                    label: 'Close Completely',
+                    type: 'radio',
+                    checked: getSettings().closeBehavior === 'quit',
+                    click: () => {
+                        const s = getSettings();
+                        s.closeBehavior = 'quit';
+                        saveSettings(s);
+                    }
+                },
+                {
+                    label: 'Minimize to Tray',
+                    type: 'radio',
+                    checked: getSettings().closeBehavior === 'tray',
+                    click: () => {
+                        const s = getSettings();
+                        s.closeBehavior = 'tray';
+                        saveSettings(s);
+                    }
+                }
+            ]
+        },
     ]
   },
 
@@ -153,8 +190,7 @@ function createWindow(lang = 'EN') {
         height: height,
         icon: `${__dirname}/lib/img/icon.ico`,
         webPreferences: {
-            plugins: true,
-			devTools: true
+            plugins: true
         },
         show: false
     })
@@ -172,15 +208,65 @@ function createWindow(lang = 'EN') {
 		}		
 
         win.loadURL(url).then(() => {
-			
-		  setTimeout(() => {
-			win.webContents.openDevTools({ mode: 'detach' }); // or 'right', 'bottom'
-		  }, 1000);
-			
+
             win.webContents.executeJavaScript('window.scrollTo(0,55)').then(() => {
                 splash.destroy();
                 win.show();
                 
+                win.on('close', async (event) => {
+                    if (app.isQuitting) return;
+
+                    const settings = getSettings();
+
+                    if (settings.closeBehavior === "quit") {
+                        return;
+                    }
+
+                    if (settings.closeBehavior === "tray") {
+                        event.preventDefault();
+                        win.hide();
+                        createTray(win);
+                        return;
+                    }
+
+                    if (settings.closeBehavior === "ask") {
+                        event.preventDefault();
+
+                        const result = await dialog.showMessageBox(win, {
+                            type: 'question',
+                            buttons: [
+                                'Close Completely',
+                                'Minimize to Tray',
+                                'Cancel'
+                            ],
+                            defaultId: 1,
+                            cancelId: 2,
+                            title: 'Close Antique Penguin',
+                            message: 'How would you like to close Antique Penguin?\nIf you close completely, you will not receive notifications.',
+                            checkboxLabel: 'Remember my choice',
+                            checkboxChecked: false
+                        });
+
+                        if (result.response === 0) {
+                            if (result.checkboxChecked) {
+                                settings.closeBehavior = "quit";
+                                saveSettings(settings);
+                            }
+                            app.isQuitting = true;
+                            app.quit();
+                        }
+
+                        if (result.response === 1) {
+                            if (result.checkboxChecked) {
+                                settings.closeBehavior = "tray";
+                                saveSettings(settings);
+                            }
+                            win.hide();
+                            createTray(win);
+                        }
+                    }
+                });
+
                 // Ask for notification permission once window is visible
                 win.webContents.executeJavaScript(`
                     (function() {
@@ -192,8 +278,8 @@ function createWindow(lang = 'EN') {
                         return clientId;
                     })();
                 `).then(clientId => {
-                    askNotificationPermission(win, clientId).then(updatedClientId => {
-                        if (!updatedClientId) {
+                    askNotificationPermission(win).then(allowed => {
+                        if (!allowed) {
                             console.log('[PUSHER] Notifications disabled');
                             
                             // Remove stored client ID completely
@@ -204,8 +290,8 @@ function createWindow(lang = 'EN') {
                             return;
                         }
 
-                        // If allowed, keep it
-                        console.log('[PUSHER] Notifications enabled with ID:', updatedClientId);
+                        // If allowed, use the clientId
+                        console.log('[PUSHER] Notifications enabled with ID:', clientId);
                     });
                 }).catch(() => {});
 
@@ -216,7 +302,8 @@ function createWindow(lang = 'EN') {
                             notifier.notify({
                                 title: notification.title || 'Antique Penguin',
                                 message: notification.body || 'You have a notification!',
-                                appID: 'com.antiquepenguin.client',
+                                appID: 'Antique Penguin',
+                                icon: path.join(__dirname, 'lib/img/icon.png'),
                                 sound: true
                             });
                             win.webContents.executeJavaScript('window.pendingNotification = null').catch(() => {});
@@ -323,16 +410,18 @@ function getSettings() {
         if (fs.existsSync(SETTINGS_PATH)) {
             const settings = JSON.parse(fs.readFileSync(SETTINGS_PATH));
             return {
-                notificationsEnabled: settings.notificationsEnabled ?? true,
-                discordRPCEnabled: settings.discordRPCEnabled ?? true
+                notificationsEnabled: settings.notificationsEnabled ?? false,
+                discordRPCEnabled: settings.discordRPCEnabled ?? true,
+                closeBehavior: settings.closeBehavior ?? "ask"
             };
         }
     } catch (e) {}
 
     // If no file exists yet → defaults
     return {
-        notificationsEnabled: true,
-        discordRPCEnabled: true
+        notificationsEnabled: false,
+        discordRPCEnabled: true,
+        closeBehavior: "ask",
     };
 }
 
@@ -365,4 +454,33 @@ async function askNotificationPermission(win) {
     saveSettings(settings);
 
     return allowed;
+}
+
+function createTray(win) {
+    if (tray) return;
+
+    tray = new Tray(path.join(__dirname, 'lib/img/icon.ico'));
+
+    const contextMenu = Menu.buildFromTemplate([
+        {
+            label: 'Open Antique Penguin',
+            click: () => {
+                win.show();
+            }
+        },
+        {
+            label: 'Quit',
+            click: () => {
+                app.isQuitting = true;
+                app.quit();
+            }
+        }
+    ]);
+
+    tray.setToolTip('Antique Penguin');
+    tray.setContextMenu(contextMenu);
+
+    tray.on('double-click', () => {
+        win.show();
+    });
 }
