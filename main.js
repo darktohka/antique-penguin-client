@@ -17,6 +17,8 @@ const rpc = new RPC.Client({ transport: 'ipc' });
 const details = "";
 const state = require('./lib/enums/states.json');
 
+let discordRPCEnabled = true;
+
 const menu_template = [  
   // { role: 'langMenu' }
   {
@@ -50,6 +52,17 @@ const menu_template = [
 		{ role: 'zoomout' },
 		{ role: 'resetZoom' },
 		{ type: 'separator' },
+		{
+			label: 'Disable Discord Rich Presence',
+			type: 'checkbox',
+			checked: false,
+			click: function(menuItem) {
+				discordRPCEnabled = !menuItem.checked;
+				if (!discordRPCEnabled) {
+					rpc.clearActivity().catch(() => {});
+				}
+			}
+		},
     ]
   },
 
@@ -196,7 +209,10 @@ function createWindow(lang = 'EN') {
 
                 rpc.login({clientId: NEW_CLIENTID}).catch(() => console.log('RPC timed out...'));
 
+				if (discordRPCEnabled) {
                 setInterval(async () => {
+					if (!discordRPCEnabled) return;
+					
                     let room = await win.webContents.executeJavaScript('current_room').catch(() => console.log('current_room not found.'));
 					let id = await win.webContents.executeJavaScript('penguin_id').catch(() => console.log('penguin_id not found.'));
 					let username = await win.webContents.executeJavaScript('penguin_user').catch(() => console.log('penguin_user not found.'));
@@ -258,6 +274,7 @@ function createWindow(lang = 'EN') {
                         state: state[room]
                     }).catch(e => console.log(e));
                 }, 1000)
+				}
             })
         }).catch(e => console.log(e));
     });
