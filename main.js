@@ -113,16 +113,11 @@ function createWindow(lang = 'EN') {
     win.webContents.session.clearCache().then(() => {
         console.log('Cleared cache.');
 		
-		url = `https://staging.antiquepengu.in`;
+		url = `https://play.antiquepengu.in`;
 		
 		if(lang == 'PT'){
 			url = `https://play.antiquepengu.in/pt`
 		}		
-
-		win.webContents.on('login', (event, request, authInfo, callback) => {
-			event.preventDefault();
-			callback('magecuck', 'salderedev'); // You can hardcode, or prompt user yourself
-		});
 
         win.loadURL(url).then(() => {
 			
