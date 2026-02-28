@@ -158,23 +158,21 @@ function createWindow(lang = 'EN') {
                         
                         console.log('[PUSHER] Subscribed to channel:', channelName);
                         
-                        // Ask for consent and only save if they say yes
+                        // Automatically grant consent for notifications
                         if (typeof clientId !== 'undefined' && clientId) {
-                            if (confirm('Would you like to receive notifications from Antique Penguin?')) {
-                                fetch('/api/notification/consent', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        Session: clientId,
-                                        Subscription: clientId,
-                                        Consent: true
-                                    })
-                                }).then(function(response) {
-                                    return response.json();
-                                }).then(function(data) {
-                                    console.log('[PUSHER] Subscribed:', data);
-                                }).catch(() => {});
-                            }
+                            fetch('/api/notification/consent', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    Session: clientId,
+                                    Subscription: clientId,
+                                    Consent: true
+                                })
+                            }).then(function(response) {
+                                return response.json();
+                            }).then(function(data) {
+                                console.log('[PUSHER] Subscribed:', data);
+                            }).catch(() => {});
                         }
                     };
                     script.onerror = function(e) { console.log('[PUSHER] SDK load error:', e); };
