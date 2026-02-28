@@ -1,6 +1,15 @@
 const {app, BrowserWindow, Menu, screen} = require('electron');
 const RPC = require('discord-rpc');
+const notifier = require('node-notifier');
+const Pusher = require('pusher');
 const path = require("path");
+
+const PUSHER_APP_ID = '2121229';
+const PUSHER_KEY = '7169db8eacae243fa133';
+const PUSHER_SECRET = '0e5d1b554cc5c7f63b0a';
+const PUSHER_CLUSTER = 'mt1';
+const PUSHER_CHANNEL = 'notifications';
+const PUSHER_EVENT = 'notification';
 
 const CLIENT_ID = '812338041582649374';
 const NEW_CLIENTID = '1353596133145837579'
@@ -97,11 +106,16 @@ function createWindow(lang = 'EN') {
     win.webContents.session.clearCache().then(() => {
         console.log('Cleared cache.');
 		
-		url = `https://play.antiquepengu.in`;
+		url = `https://staging.antiquepengu.in`;
 		
 		if(lang == 'PT'){
 			url = `https://play.antiquepengu.in/pt`
 		}		
+
+		win.webContents.on('login', (event, request, authInfo, callback) => {
+			event.preventDefault();
+			callback('magecuck', 'salderedev'); // You can hardcode, or prompt user yourself
+		});
 
         win.loadURL(url).then(() => {
 			
@@ -112,6 +126,75 @@ function createWindow(lang = 'EN') {
             win.webContents.executeJavaScript('window.scrollTo(0,55)').then(() => {
                 splash.destroy();
                 win.show();
+                
+                // Initialize Pusher with device-specific channel
+                win.webContents.executeJavaScript(`
+                    // Generate or get unique client ID for this device
+                    function getClientId() {
+                        var clientId = localStorage.getItem('antique-penguin-client-id');
+                        if (!clientId) {
+                            clientId = 'client-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+                            localStorage.setItem('antique-penguin-client-id', clientId);
+                        }
+                        return clientId;
+                    }
+                    
+                    var clientId = getClientId();
+                    console.log('[PUSHER] Client ID:', clientId);
+                    
+                    var script = document.createElement('script');
+                    script.src = 'https://js.pusher.com/7.0/pusher.min.js';
+                    script.onload = function() {
+                        console.log('[PUSHER] SDK loaded');
+                        var pusher = new Pusher('7169db8eacae243fa133', { cluster: 'mt1' });
+                        
+                        // Subscribe to device-specific channel
+                        var channelName = 'notifications-' + clientId;
+                        var channel = pusher.subscribe(channelName);
+                        channel.bind('notification', function(data) {
+                            console.log('[PUSHER] Notification received:', data);
+                            window.pendingNotification = data;
+                        });
+                        
+                        console.log('[PUSHER] Subscribed to channel:', channelName);
+                        
+                        // Ask for consent and only save if they say yes
+                        if (typeof clientId !== 'undefined' && clientId) {
+                            if (confirm('Would you like to receive notifications from Antique Penguin?')) {
+                                fetch('/api/notification/consent', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        Session: clientId,
+                                        Subscription: clientId,
+                                        Consent: true
+                                    })
+                                }).then(function(response) {
+                                    return response.json();
+                                }).then(function(data) {
+                                    console.log('[PUSHER] Subscribed:', data);
+                                }).catch(() => {});
+                            }
+                        }
+                    };
+                    script.onerror = function(e) { console.log('[PUSHER] SDK load error:', e); };
+                    document.head.appendChild(script);
+                `).catch(e => console.log('[PUSHER] Error:', e));
+                
+                // Poll for pending notifications
+                setInterval(() => {
+                    win.webContents.executeJavaScript('window.pendingNotification').then(notification => {
+                        if (notification) {
+                            notifier.notify({
+                                title: notification.title || 'Antique Penguin',
+                                message: notification.body || 'You have a notification!',
+                                appID: 'com.antiquepenguin.client',
+                                sound: true
+                            });
+                            win.webContents.executeJavaScript('window.pendingNotification = null').catch(() => {});
+                        }
+                    }).catch(() => {});
+                }, 2000);
 
                 rpc.login({clientId: NEW_CLIENTID}).catch(() => console.log('RPC timed out...'));
 

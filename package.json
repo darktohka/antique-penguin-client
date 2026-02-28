@@ -13,25 +13,42 @@
     "afterPack": "./afterpack.js",
     "afterAllArtifactBuild": "./afterbuild.js",
     "appId": "in.antiquepengu.client",
-    "files": ["lib/img/antique_logo.png", "lib/splash.html", "lib/enums/**/*", "lib/flash/${os}/**/*", "main.js"],
+    "files": [
+      "lib/img/antique_logo.png",
+      "lib/splash.html",
+      "lib/enums/**/*",
+      "lib/flash/${os}/**/*",
+      "main.js"
+    ],
     "directories": {
       "buildResources": "lib"
     },
     "win": {
       "icon": "lib/img/icon.ico",
-      "files": ["lib/img/icon.ico"]
+      "files": [
+        "lib/img/icon.ico"
+      ]
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "lib/img/icon.icns",
-      "files": ["lib/img/icon.icns"]
+      "files": [
+        "lib/img/icon.icns"
+      ]
     },
     "linux": {
       "icon": "lib/img/icon.png",
       "description": "Antique Penguin is a moderated virtual remake of Club Penguin.",
       "category": "Game",
-      "files": ["lib/img/icon.png"],
-      "target": ["deb", "AppImage"],
+      "files": [
+        "lib/img/icon.png"
+      ],
+      "target": [
+        "deb",
+        "AppImage"
+      ],
       "artifactName": "antique.${ext}",
       "maintainer": "Darktohka"
     }
@@ -58,6 +75,9 @@
   },
   "homepage": "https://github.com/darktohka/antique-penguin-client#readme",
   "dependencies": {
-    "discord-rpc": "^3.2.0"
+    "discord-rpc": "^3.2.0",
+    "node-notifier": "^10.0.1",
+    "pusher": "^5.3.2",
+    "pusher-js": "^8.4.0"
   }
 }
