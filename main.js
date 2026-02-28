@@ -1,8 +1,10 @@
-const {app, BrowserWindow, Menu, screen} = require('electron');
+const {app, BrowserWindow, Menu, screen, dialog} = require('electron');
 const RPC = require('discord-rpc');
 const notifier = require('node-notifier');
 const Pusher = require('pusher');
 const path = require("path");
+const fs = require('fs');
+const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
 
 const PUSHER_APP_ID = '2121229';
 const PUSHER_KEY = '7169db8eacae243fa133';
@@ -17,7 +19,8 @@ const rpc = new RPC.Client({ transport: 'ipc' });
 const details = "";
 const state = require('./lib/enums/states.json');
 
-let discordRPCEnabled = true;
+const initialSettings = getSettings();
+let discordRPCEnabled = initialSettings.discordRPCEnabled;
 
 const menu_template = [  
   // { role: 'langMenu' }
@@ -52,17 +55,60 @@ const menu_template = [
 		{ role: 'zoomout' },
 		{ role: 'resetZoom' },
 		{ type: 'separator' },
-		{
-			label: 'Disable Discord Rich Presence',
-			type: 'checkbox',
-			checked: false,
-			click: function(menuItem) {
-				discordRPCEnabled = !menuItem.checked;
-				if (!discordRPCEnabled) {
-					rpc.clearActivity().catch(() => {});
-				}
-			}
-		},
+        {
+            label: 'Enable Notifications',
+            type: 'checkbox',
+            checked: getSettings().notificationsEnabled === true,
+            click: async function(menuItem, browserWindow) {
+                const settings = getSettings();
+
+                settings.notificationsEnabled = menuItem.checked;
+                saveSettings(settings);
+
+                if (!menuItem.checked) {
+                    console.log('[SETTINGS] Notifications disabled');
+
+                    // Remove clientId from localStorage
+                    await browserWindow.webContents.executeJavaScript(`
+                        localStorage.removeItem('antique-penguin-client-id');
+                    `);
+
+                } else {
+                    console.log('[SETTINGS] Notifications enabled');
+
+                    // Generate clientId if missing
+                    const clientId = await browserWindow.webContents.executeJavaScript(`
+                        (function() {
+                            var clientId = localStorage.getItem('antique-penguin-client-id');
+                            if (!clientId) {
+                                clientId = 'client-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+                                localStorage.setItem('antique-penguin-client-id', clientId);
+                            }
+                            return clientId;
+                        })();
+                    `);
+
+                    console.log('[SETTINGS] Client ID:', clientId);
+                }
+            }
+        },
+        {
+            label: 'Enable Discord Rich Presence',
+            type: 'checkbox',
+            checked: getSettings().discordRPCEnabled,
+            click: function(menuItem) {
+                const settings = getSettings();
+
+                settings.discordRPCEnabled = menuItem.checked;
+                saveSettings(settings);
+
+                discordRPCEnabled = menuItem.checked;
+
+                if (!discordRPCEnabled) {
+                    rpc.clearActivity().catch(() => {});
+                }
+            }
+        },
     ]
   },
 
@@ -119,16 +165,11 @@ function createWindow(lang = 'EN') {
     win.webContents.session.clearCache().then(() => {
         console.log('Cleared cache.');
 		
-		url = `https://staging.antiquepengu.in`;
+		url = `https://play.antiquepengu.in`;
 		
 		if(lang == 'PT'){
 			url = `https://play.antiquepengu.in/pt`
 		}		
-
-		win.webContents.on('login', (event, request, authInfo, callback) => {
-			event.preventDefault();
-			callback('magecuck', 'salderedev'); // You can hardcode, or prompt user yourself
-		});
 
         win.loadURL(url).then(() => {
 			
@@ -140,58 +181,34 @@ function createWindow(lang = 'EN') {
                 splash.destroy();
                 win.show();
                 
-                // Initialize Pusher with device-specific channel
+                // Ask for notification permission once window is visible
                 win.webContents.executeJavaScript(`
-                    // Generate or get unique client ID for this device
-                    function getClientId() {
+                    (function() {
                         var clientId = localStorage.getItem('antique-penguin-client-id');
                         if (!clientId) {
                             clientId = 'client-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
                             localStorage.setItem('antique-penguin-client-id', clientId);
                         }
                         return clientId;
-                    }
-                    
-                    var clientId = getClientId();
-                    console.log('[PUSHER] Client ID:', clientId);
-                    
-                    var script = document.createElement('script');
-                    script.src = 'https://js.pusher.com/7.0/pusher.min.js';
-                    script.onload = function() {
-                        console.log('[PUSHER] SDK loaded');
-                        var pusher = new Pusher('7169db8eacae243fa133', { cluster: 'mt1' });
-                        
-                        // Subscribe to device-specific channel
-                        var channelName = 'notifications-' + clientId;
-                        var channel = pusher.subscribe(channelName);
-                        channel.bind('notification', function(data) {
-                            console.log('[PUSHER] Notification received:', data);
-                            window.pendingNotification = data;
-                        });
-                        
-                        console.log('[PUSHER] Subscribed to channel:', channelName);
-                        
-                        // Automatically grant consent for notifications
-                        if (typeof clientId !== 'undefined' && clientId) {
-                            fetch('/api/notification/consent', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    Session: clientId,
-                                    Subscription: clientId,
-                                    Consent: true
-                                })
-                            }).then(function(response) {
-                                return response.json();
-                            }).then(function(data) {
-                                console.log('[PUSHER] Subscribed:', data);
-                            }).catch(() => {});
+                    })();
+                `).then(clientId => {
+                    askNotificationPermission(win, clientId).then(updatedClientId => {
+                        if (!updatedClientId) {
+                            console.log('[PUSHER] Notifications disabled');
+                            
+                            // Remove stored client ID completely
+                            win.webContents.executeJavaScript(`
+                                localStorage.removeItem('antique-penguin-client-id');
+                            `).catch(() => {});
+                            
+                            return;
                         }
-                    };
-                    script.onerror = function(e) { console.log('[PUSHER] SDK load error:', e); };
-                    document.head.appendChild(script);
-                `).catch(e => console.log('[PUSHER] Error:', e));
-                
+
+                        // If allowed, keep it
+                        console.log('[PUSHER] Notifications enabled with ID:', updatedClientId);
+                    });
+                }).catch(() => {});
+
                 // Poll for pending notifications
                 setInterval(() => {
                     win.webContents.executeJavaScript('window.pendingNotification').then(notification => {
@@ -300,3 +317,52 @@ rpc.on('ready', () => {
 
     console.log('Rich presence is ready.');
 })
+
+function getSettings() {
+    try {
+        if (fs.existsSync(SETTINGS_PATH)) {
+            const settings = JSON.parse(fs.readFileSync(SETTINGS_PATH));
+            return {
+                notificationsEnabled: settings.notificationsEnabled ?? true,
+                discordRPCEnabled: settings.discordRPCEnabled ?? true
+            };
+        }
+    } catch (e) {}
+
+    // If no file exists yet → defaults
+    return {
+        notificationsEnabled: true,
+        discordRPCEnabled: true
+    };
+}
+
+function saveSettings(settings) {
+    try {
+        fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
+    } catch (e) {}
+}
+
+async function askNotificationPermission(win) {
+    const settings = getSettings();
+
+    if (typeof settings.notificationsEnabled !== 'undefined') {
+        return settings.notificationsEnabled;
+    }
+
+    const result = await dialog.showMessageBox(win, {
+        type: 'question',
+        buttons: ['Allow', 'Deny'],
+        defaultId: 0,
+        cancelId: 1,
+        title: 'Enable Notifications?',
+        message: 'Would you like to receive desktop notifications from Antique Penguin?',
+        detail: 'You can change this later in settings.'
+    });
+
+    const allowed = result.response === 0;
+
+    settings.notificationsEnabled = allowed;
+    saveSettings(settings);
+
+    return allowed;
+}
