@@ -74,8 +74,9 @@
     "url": "https://github.com/darktohka/antique-penguin-client/issues"
   },
   "homepage": "https://github.com/darktohka/antique-penguin-client#readme",
-  "dependencies": {
+"dependencies": {
     "discord-rpc": "^3.2.0",
+    "electron-updater": "^6.3.9",
     "node-notifier": "^10.0.1",
     "pusher": "^5.3.2",
     "pusher-js": "^8.4.0"

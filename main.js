@@ -3,6 +3,7 @@ const RPC = require('discord-rpc');
 const notifier = require('node-notifier');
 const Pusher = require('pusher');
 const path = require("path");
+const https = require("https");
 
 const PUSHER_APP_ID = '2121229';
 const PUSHER_KEY = '7169db8eacae243fa133';
@@ -41,7 +42,7 @@ const menu_template = [
     ]
   },
   // { role: 'settingsMenu' }
-  {
+{
     label: 'Options',
     submenu: [
 		{ role: 'togglefullscreen' },
@@ -50,6 +51,12 @@ const menu_template = [
 		{ role: 'zoomout' },
 		{ role: 'resetZoom' },
 		{ type: 'separator' },
+		{
+			label: 'Check for Updates',
+			click: function() {
+				checkForUpdates(true);
+			}
+		},
     ]
   },
 
@@ -126,6 +133,8 @@ function createWindow(lang = 'EN') {
             win.webContents.executeJavaScript('window.scrollTo(0,55)').then(() => {
                 splash.destroy();
                 win.show();
+                
+                checkForUpdates(false);
                 
                 // Initialize Pusher with device-specific channel
                 win.webContents.executeJavaScript(`
@@ -263,7 +272,111 @@ function createWindow(lang = 'EN') {
     });
 }
 
-app.whenReady().then(createWindow);
+const REPO_OWNER = 'darktohka';
+const REPO_NAME = 'antique-penguin-client';
+const CURRENT_VERSION = app.getVersion();
+
+async function checkForUpdates(manual = false) {
+	try {
+		const data = await fetchJson(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`);
+		const latestVersion = data.tag_name.replace(/^v/, '');
+
+		console.log(`[UPDATER] Current: ${CURRENT_VERSION}, Latest: ${latestVersion}`);
+
+		if (compareVersions(latestVersion, CURRENT_VERSION) > 0) {
+			const {dialog} = require('electron');
+			const result = await dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+				type: 'info',
+				title: 'Update Available',
+				message: `A new version (${latestVersion}) is available. Your version is ${CURRENT_VERSION}.`,
+				buttons: ['Download Update', 'Later'],
+				defaultId: 0
+			});
+
+			if (result.response === 0) {
+				await downloadAndInstallUpdate(data);
+			}
+		} else if (manual) {
+			const {dialog} = require('electron');
+			dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+				type: 'info',
+				title: 'No Updates',
+				message: `You are running the latest version (${CURRENT_VERSION}).`,
+				buttons: ['OK'],
+				defaultId: 0
+			});
+		}
+	} catch (err) {
+		console.error('[UPDATER] Check failed:', err);
+		if (manual) {
+			const {dialog} = require('electron');
+			dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+				type: 'error',
+				title: 'Update Error',
+				message: `Failed to check for updates: ${err.message}`,
+				buttons: ['OK'],
+				defaultId: 0
+			});
+		}
+	}
+}
+
+function fetchJson(url) {
+	return new Promise((resolve, reject) => {
+		https.get(url, { headers: { 'User-Agent': ' Antique-Penguin-Client' } }, (res) => {
+			let data = '';
+			res.on('data', chunk => data += chunk);
+			res.on('end', () => {
+				try {
+					resolve(JSON.parse(data));
+				} catch (e) {
+					reject(e);
+				}
+			});
+		}).on('error', reject);
+	});
+}
+
+function compareVersions(v1, v2) {
+	const parts1 = v1.split('.').map(Number);
+	const parts2 = v2.split('.').map(Number);
+	for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+		const p1 = parts1[i] || 0;
+		const p2 = parts2[i] || 0;
+		if (p1 > p2) return 1;
+		if (p1 < p2) return -1;
+	}
+	return 0;
+}
+
+async function downloadAndInstallUpdate(releaseData) {
+	const {dialog, shell} = require('electron');
+	
+	const asset = releaseData.assets.find(a => a.name.endsWith('.exe') || a.name.includes('Setup') || a.name.includes('installer'));
+	
+	if (asset) {
+		const result = await dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+			type: 'info',
+			title: 'Download Update',
+			message: `Download version ${releaseData.tag_name}?`,
+			detail: `This will download the installer from GitHub.`,
+			buttons: ['Download', 'Open in Browser', 'Cancel'],
+			defaultId: 0
+		});
+
+		if (result.response === 0) {
+			shell.openExternal(asset.browser_download_url);
+		} else if (result.response === 1) {
+			shell.openExternal(releaseData.html_url);
+		}
+	} else {
+		shell.openExternal(releaseData.html_url);
+	}
+}
+
+	app.whenReady().then(() => {
+	createWindow();
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit(); 
