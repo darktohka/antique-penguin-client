@@ -24,6 +24,13 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+      
+      - name: Upload results to path 
+        uses: actions/upload-artifact@v4
+        with:
+          name: results 
+          path: ${{ github.workspace }}/.npm/_logs/
+          if-no-files-found: ignore 
 
       - name: Package with electron-builder
         shell: bash
