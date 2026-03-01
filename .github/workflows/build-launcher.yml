@@ -23,7 +23,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --package-lock-only
 
       - name: Package with electron-builder
         shell: bash
