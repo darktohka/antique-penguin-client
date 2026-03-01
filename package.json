@@ -31,9 +31,6 @@
     },
     "mac": {
       "target": "dmg",
-      "arch": [
-        "universal"
-      ],
       "icon": "lib/img/icon.icns",
       "files": [
         "lib/img/icon.icns"
