@@ -50,7 +50,7 @@ jobs:
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             BUILD_TARGET="linux"
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            BUILD_TARGET="mac --x64"
+            BUILD_TARGET="mac"
           fi
           echo "Packaging for $BUILD_TARGET..."
           npx electron-builder --$BUILD_TARGET

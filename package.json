@@ -31,7 +31,7 @@
     },
     "mac": {
       "target": [
-        "dmg"
+        "universal"
       ],
       "icon": "lib/img/icon.icns",
       "files": [
