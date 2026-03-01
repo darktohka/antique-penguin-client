@@ -164,11 +164,6 @@ switch (process.platform) {
         flash_plugin = `lib/flash/libpepflashplayer.so`
         break;
 }
-
-console.log("FLASH PLUGIN:" + flash_plugin);
-console.log("PROCESS:" + process);
-console.log("PLATFORM:" + process.platform);
-
 app.commandLine.appendSwitch('ppapi-flash-path', path.join(__dirname, flash_plugin));
 const TIMESTAMP = new Date();
 
