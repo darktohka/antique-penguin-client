@@ -317,16 +317,19 @@ function createWindow(lang = 'EN') {
                 setInterval(async () => {
 					if (!discordRPCEnabled) return;
 					
-                    let room = await win.webContents.executeJavaScript('current_room').catch(() => console.log('current_room not found.'));
-					let id = await win.webContents.executeJavaScript('penguin_id').catch(() => console.log('penguin_id not found.'));
 					let username = await win.webContents.executeJavaScript('penguin_user').catch(() => console.log('penguin_user not found.'));
+                    let room = await win.webContents.executeJavaScript('current_room').catch(() => console.log('current_room not found.'));
+
+					if(!username){ return; }
+					if(!room){ return; }
+
+					let id = await win.webContents.executeJavaScript('penguin_id').catch(() => console.log('penguin_id not found.'));
                     let iggyuser = await win.webContents.executeJavaScript('igloo_penguin_user').catch(() => console.log('igloo_penguin_user not found.'));
 					let isgaming = await win.webContents.executeJavaScript('is_gaming').catch(() => console.log('is_gaming not found.'));
-					
-					ccusername = username[0].toUpperCase() + username.substring(1);
-					if(!room){ return; }
-					
-					else if(room > 1000)
+
+					ccusername = username.length > 0 ? username[0].toUpperCase() + username.substring(1) : '';
+	
+					if(room > 1000)
 					{
 						if(room - 1000 == id){
 						rpc.setActivity({
@@ -368,15 +371,15 @@ function createWindow(lang = 'EN') {
 						}).catch(e => console.log(e));
 							return;
 						}
-					}
-					
-                    rpc.setActivity({
+					} else {
+					rpc.setActivity({
                         largeImageKey: "main-logo",
 						largeImageText: "Play now at antiquepengu.in",
                         startTimestamp: TIMESTAMP,
 						details: "Signed in as " + ccusername,
                         state: state[room]
                     }).catch(e => console.log(e));
+				    }
                 }, 1000)
 				}
             })
