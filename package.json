@@ -31,10 +31,6 @@
     },
     "mac": {
       "target": "dmg",
-      "arch": [
-        "x64",
-        "arm64"
-      ],
       "icon": "lib/img/icon.icns",
       "files": [
         "lib/img/icon.icns"
