@@ -158,7 +158,7 @@ switch (process.platform) {
         flash_plugin = `lib/flash/pepflashplayer64_32_0_0_303.dll`
         break;
     case 'darwin':
-        flash_plugin = `lib/flash/PepperFlashPlayer.plugin`
+        flash_plugin = `lib/flash/mac/PepperFlashPlayer.plugin`
         break;
     case 'linux':
         flash_plugin = `lib/flash/libpepflashplayer.so`
