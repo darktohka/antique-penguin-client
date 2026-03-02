@@ -30,9 +30,10 @@
       ]
     },
     "mac": {
-      "target": "default",
+      "target": "dmg",
       "arch": [
-        "universal"
+        "x64",
+        "arm64"
       ],
       "icon": "lib/img/icon.icns",
       "files": [
