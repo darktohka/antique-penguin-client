@@ -155,7 +155,7 @@ const menu_template = [
 let flash_plugin = null;
 switch (process.platform) {
     case 'win32':
-        flash_plugin = `lib/flash/pepflashplayer64_32_0_0_303.dll`
+        flash_plugin = `lib/flash/win/pepflashplayer64_32_0_0_303.dll`
         break;
     case 'darwin':
         flash_plugin = `lib/flash/mac/PepperFlashPlayer.plugin`
