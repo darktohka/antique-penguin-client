@@ -161,7 +161,7 @@ switch (process.platform) {
         flash_plugin = `lib/flash/mac/PepperFlashPlayer.plugin`
         break;
     case 'linux':
-        flash_plugin = `lib/flash/libpepflashplayer.so`
+        flash_plugin = `lib/flash/linux/libpepflashplayer.so`
         break;
 }
 app.commandLine.appendSwitch('ppapi-flash-path', path.join(__dirname, flash_plugin));
